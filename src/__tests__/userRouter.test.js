@@ -183,7 +183,7 @@ describe("User Router", () => {
       DB.loginUser.mockResolvedValue();
       DB.isLoggedIn.mockResolvedValue(true);
 
-      const [user, userToken] = await registerUser(request(app));
+      const [, userToken] = await registerUser(request(app));
 
       // Test without pagination - should return all users
       DB.getUsers.mockResolvedValue(allMockUsers);
@@ -249,7 +249,7 @@ describe("User Router", () => {
       DB.loginUser.mockResolvedValue();
       DB.isLoggedIn.mockResolvedValue(true);
 
-      const [user, userToken] = await registerUser(request(app));
+      const [, userToken] = await registerUser(request(app));
 
       // Test filtering by name containing "pizza"
       DB.getUsers.mockResolvedValue(filteredUsers);
