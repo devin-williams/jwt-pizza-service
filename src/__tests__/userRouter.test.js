@@ -270,27 +270,102 @@ describe("User Router", () => {
       expect(noMatchRes.body).toEqual([]);
       expect(noMatchRes.body).toHaveLength(0);
     });
-
-    async function registerUser(service) {
-      const testUser = {
-        name: "pizza diner",
-        email: `${randomName()}@test.com`,
-        password: "a",
-      };
-      const registerRes = await service.post("/api/auth").send(testUser);
-
-      // Check if registration was successful
-      if (!registerRes.body || !registerRes.body.user) {
-        throw new Error(`Registration failed: ${JSON.stringify(registerRes.body)}`);
-      }
-
-      registerRes.body.user.password = testUser.password;
-
-      return [registerRes.body.user, registerRes.body.token];
-    }
-
-    function randomName() {
-      return Math.random().toString(36).substring(2, 12);
-    }
   });
+
+  describe("DELETE /api/user/:userId", () => {
+    test("should allow user to delete their own account", async () => {
+      const user = {
+        id: 1,
+        name: "Test User",
+        email: "test@test.com",
+        roles: [{ role: "diner" }],
+      };
+      const token = jwt.sign(user, "test-secret");
+
+      DB.isLoggedIn.mockResolvedValue(true);
+      DB.deleteUser.mockResolvedValue({ success: true });
+
+      const response = await request(app)
+        .delete("/api/user/1")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe("user deleted");
+      expect(DB.deleteUser).toHaveBeenCalledWith(1);
+    });
+
+    test("should allow admin to delete any user", async () => {
+      const admin = {
+        id: 1,
+        name: "Admin User",
+        email: "admin@test.com",
+        roles: [{ role: "admin" }],
+      };
+      const token = jwt.sign(admin, "test-secret");
+
+      DB.isLoggedIn.mockResolvedValue(true);
+      DB.deleteUser.mockResolvedValue({ success: true });
+
+      const response = await request(app)
+        .delete("/api/user/5")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe("user deleted");
+      expect(DB.deleteUser).toHaveBeenCalledWith(5);
+    });
+
+    test("should return 403 when non-admin tries to delete another user", async () => {
+      const user = {
+        id: 1,
+        name: "Test User",
+        email: "test@test.com",
+        roles: [{ role: "diner" }],
+      };
+      const token = jwt.sign(user, "test-secret");
+
+      DB.isLoggedIn.mockResolvedValue(true);
+
+      const response = await request(app)
+        .delete("/api/user/2")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("unauthorized");
+      expect(DB.deleteUser).not.toHaveBeenCalled();
+    });
+
+    test("should return 401 when not authenticated", async () => {
+      const response = await request(app).delete("/api/user/1");
+
+      expect(response.status).toBe(401);
+      expect(DB.deleteUser).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("PUT /api/user/:userId", () => {
+  });
+
+  // Helper functions
+  async function registerUser(service) {
+    const testUser = {
+      name: "pizza diner",
+      email: `${randomName()}@test.com`,
+      password: "a",
+    };
+    const registerRes = await service.post("/api/auth").send(testUser);
+
+    // Check if registration was successful
+    if (!registerRes.body || !registerRes.body.user) {
+      throw new Error(`Registration failed: ${JSON.stringify(registerRes.body)}`);
+    }
+
+    registerRes.body.user.password = testUser.password;
+
+    return [registerRes.body.user, registerRes.body.token];
+  }
+
+  function randomName() {
+    return Math.random().toString(36).substring(2, 12);
+  }
 });

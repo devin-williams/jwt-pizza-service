@@ -29,6 +29,7 @@ jest.mock('../database/database.js', () => {
     getUser: jest.fn(),
     getUsers: jest.fn(),
     updateUser: jest.fn(),
+    deleteUser: jest.fn(),
     loginUser: jest.fn(),
     logoutUser: jest.fn(),
     isLoggedIn: jest.fn(),

@@ -78,4 +78,22 @@ userRouter.put(
   })
 );
 
+// deleteUser
+userRouter.delete(
+  "/:userId",
+  authRouter.authenticateToken,
+  asyncHandler(async (req, res) => {
+    const userId = Number(req.params.userId);
+    const user = req.user;
+
+    // Only allow users to delete their own account or admins to delete any account
+    if (user.id !== userId && !user.isRole(Role.Admin)) {
+      return res.status(403).json({ message: "unauthorized" });
+    }
+
+    await DB.deleteUser(userId);
+    res.json({ message: "user deleted" });
+  })
+);
+
 module.exports = userRouter;
