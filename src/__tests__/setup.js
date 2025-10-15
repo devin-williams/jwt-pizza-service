@@ -27,6 +27,7 @@ jest.mock('../database/database.js', () => {
     addMenuItem: jest.fn(),
     addUser: jest.fn(),
     getUser: jest.fn(),
+    getUsers: jest.fn(),
     updateUser: jest.fn(),
     loginUser: jest.fn(),
     logoutUser: jest.fn(),

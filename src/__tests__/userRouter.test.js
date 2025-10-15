@@ -146,7 +146,7 @@ describe("User Router", () => {
       expect(listUsersRes.status).toBe(401);
     });
 
-    test("list users", async () => {
+    test("list users with pagination", async () => {
       const mockUser = {
         id: 1,
         name: "pizza diner",
@@ -154,16 +154,63 @@ describe("User Router", () => {
         roles: [{ role: "diner" }],
       };
 
+      const allMockUsers = [
+        {
+          id: 1,
+          name: "pizza diner",
+          email: "test@test.com",
+          roles: [{ role: "diner" }],
+        },
+        {
+          id: 2,
+          name: "admin user",
+          email: "admin@test.com",
+          roles: [{ role: "admin" }],
+        },
+        {
+          id: 3,
+          name: "franchisee user",
+          email: "franchisee@test.com",
+          roles: [{ role: "franchisee" }],
+        },
+      ];
+
+      const page1Users = [allMockUsers[0], allMockUsers[1]];
+      const page2Users = [allMockUsers[2]];
+
       // Mock the database methods
       DB.addUser.mockResolvedValue(mockUser);
       DB.loginUser.mockResolvedValue();
       DB.isLoggedIn.mockResolvedValue(true);
 
       const [user, userToken] = await registerUser(request(app));
-      const listUsersRes = await request(app)
+
+      // Test without pagination - should return all users
+      DB.getUsers.mockResolvedValue(allMockUsers);
+      const listAllUsersRes = await request(app)
         .get("/api/user")
         .set("Authorization", "Bearer " + userToken);
-      expect(listUsersRes.status).toBe(200);
+      expect(listAllUsersRes.status).toBe(200);
+      expect(listAllUsersRes.body).toEqual(allMockUsers);
+      expect(listAllUsersRes.body).toHaveLength(3);
+
+      // Test first page with limit=2
+      DB.getUsers.mockResolvedValue(page1Users);
+      const listPage1Res = await request(app)
+        .get("/api/user?page=0&limit=2")
+        .set("Authorization", "Bearer " + userToken);
+      expect(listPage1Res.status).toBe(200);
+      expect(listPage1Res.body).toEqual(page1Users);
+      expect(listPage1Res.body).toHaveLength(2);
+
+      // Test second page with limit=2
+      DB.getUsers.mockResolvedValue(page2Users);
+      const listPage2Res = await request(app)
+        .get("/api/user?page=1&limit=2")
+        .set("Authorization", "Bearer " + userToken);
+      expect(listPage2Res.status).toBe(200);
+      expect(listPage2Res.body).toEqual(page2Users);
+      expect(listPage2Res.body).toHaveLength(1);
     });
 
     async function registerUser(service) {

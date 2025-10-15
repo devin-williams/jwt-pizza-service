@@ -75,6 +75,38 @@ class DB {
     }
   }
 
+  async getUsers(page, limit) {
+    const connection = await this.getConnection();
+    try {
+      let query = `SELECT id, name, email FROM user`;
+      const params = [];
+
+      // Add pagination if provided
+      if (page !== undefined && limit !== undefined) {
+        const offset = page * limit;
+        query += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+      }
+
+      const userResult = await this.query(connection, query, params);
+
+      // Get roles for each user
+      const users = await Promise.all(
+        userResult.map(async (user) => {
+          const roleResult = await this.query(connection, `SELECT * FROM userRole WHERE userId=?`, [user.id]);
+          const roles = roleResult.map((r) => {
+            return { objectId: r.objectId || undefined, role: r.role };
+          });
+          return { ...user, roles: roles };
+        })
+      );
+
+      return users;
+    } finally {
+      connection.end();
+    }
+  }
+
   async updateUser(userId, name, email, password) {
     const connection = await this.getConnection();
     try {

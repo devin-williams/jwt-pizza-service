@@ -8,6 +8,7 @@ const Role = {
 const DB = {
   addUser: jest.fn(),
   getUser: jest.fn(),
+  getUsers: jest.fn(),
   loginUser: jest.fn(),
   logoutUser: jest.fn(),
   isLoggedIn: jest.fn(),
