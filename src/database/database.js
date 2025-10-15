@@ -75,11 +75,17 @@ class DB {
     }
   }
 
-  async getUsers(page, limit) {
+  async getUsers(page, limit, name) {
     const connection = await this.getConnection();
     try {
       let query = `SELECT id, name, email FROM user`;
       const params = [];
+
+      // Add name filter if provided
+      if (name) {
+        query += ` WHERE name LIKE ?`;
+        params.push(`%${name}%`);
+      }
 
       // Add pagination if provided
       if (page !== undefined && limit !== undefined) {

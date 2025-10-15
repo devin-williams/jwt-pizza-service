@@ -213,6 +213,64 @@ describe("User Router", () => {
       expect(listPage2Res.body).toHaveLength(1);
     });
 
+    test("list users with name filter", async () => {
+      const mockUser = {
+        id: 1,
+        name: "pizza diner",
+        email: "test@test.com",
+        roles: [{ role: "diner" }],
+      };
+
+      const allMockUsers = [
+        {
+          id: 1,
+          name: "pizza diner",
+          email: "test@test.com",
+          roles: [{ role: "diner" }],
+        },
+        {
+          id: 2,
+          name: "admin user",
+          email: "admin@test.com",
+          roles: [{ role: "admin" }],
+        },
+        {
+          id: 3,
+          name: "pizza lover",
+          email: "pizzalover@test.com",
+          roles: [{ role: "diner" }],
+        },
+      ];
+
+      const filteredUsers = [allMockUsers[0], allMockUsers[2]];
+
+      // Mock the database methods
+      DB.addUser.mockResolvedValue(mockUser);
+      DB.loginUser.mockResolvedValue();
+      DB.isLoggedIn.mockResolvedValue(true);
+
+      const [user, userToken] = await registerUser(request(app));
+
+      // Test filtering by name containing "pizza"
+      DB.getUsers.mockResolvedValue(filteredUsers);
+      const filterByNameRes = await request(app)
+        .get("/api/user?name=pizza")
+        .set("Authorization", "Bearer " + userToken);
+      expect(filterByNameRes.status).toBe(200);
+      expect(filterByNameRes.body).toEqual(filteredUsers);
+      expect(filterByNameRes.body).toHaveLength(2);
+      expect(filterByNameRes.body.every(u => u.name.toLowerCase().includes("pizza"))).toBe(true);
+
+      // Test filtering with no matches
+      DB.getUsers.mockResolvedValue([]);
+      const noMatchRes = await request(app)
+        .get("/api/user?name=nonexistent")
+        .set("Authorization", "Bearer " + userToken);
+      expect(noMatchRes.status).toBe(200);
+      expect(noMatchRes.body).toEqual([]);
+      expect(noMatchRes.body).toHaveLength(0);
+    });
+
     async function registerUser(service) {
       const testUser = {
         name: "pizza diner",

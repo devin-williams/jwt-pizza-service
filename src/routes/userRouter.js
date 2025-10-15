@@ -44,8 +44,9 @@ userRouter.get(
   asyncHandler(async (req, res) => {
     const page = req.query.page !== undefined ? parseInt(req.query.page) : undefined;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : undefined;
+    const name = req.query.name;
 
-    const users = await DB.getUsers(page, limit);
+    const users = await DB.getUsers(page, limit, name);
     res.json(users);
   })
 );
