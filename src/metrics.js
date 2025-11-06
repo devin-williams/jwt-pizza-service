@@ -16,9 +16,7 @@ class MetricsCollector {
       failure: 0,
     };
 
-    // Track users with their last activity timestamp
-    this.activeUsers = new Map(); // userId -> timestamp
-    this.ACTIVE_USER_WINDOW = 10 * 60 * 1000; // 10 minutes in milliseconds
+    this.activeUsers = new Set();
 
     this.pizzaMetrics = {
       sold: 0,
@@ -50,7 +48,7 @@ class MetricsCollector {
 
     // Track active users (if authenticated)
     if (req.user?.id) {
-      this.activeUsers.set(req.user.id, Date.now());
+      this.activeUsers.add(req.user.id);
     }
 
     // Track authentication attempts (login endpoint is PUT /api/auth)
@@ -75,13 +73,6 @@ class MetricsCollector {
     next();
   };
 
-  // Track user logout
-  userLogout(userId) {
-    if (userId) {
-      this.activeUsers.delete(userId);
-    }
-  }
-
   // Track pizza purchases
   pizzaPurchase(success, latency, price) {
     if (success) {
@@ -93,21 +84,6 @@ class MetricsCollector {
 
     this.latencyMetrics.pizzaCreationTotal += latency;
     this.latencyMetrics.pizzaCreationCount++;
-  }
-
-  // Get count of active users (within time window)
-  getActiveUserCount() {
-    const now = Date.now();
-    const cutoffTime = now - this.ACTIVE_USER_WINDOW;
-
-    // Remove stale users
-    for (const [userId, timestamp] of this.activeUsers.entries()) {
-      if (timestamp < cutoffTime) {
-        this.activeUsers.delete(userId);
-      }
-    }
-
-    return this.activeUsers.size;
   }
 
   // Get system metrics
@@ -137,7 +113,7 @@ class MetricsCollector {
         this.sendMetricToGrafana('auth_success', this.authMetrics.success, 'counter');
         this.sendMetricToGrafana('auth_failure', this.authMetrics.failure, 'counter');
 
-        this.sendMetricToGrafana('active_users', this.getActiveUserCount(), 'gauge');
+        this.sendMetricToGrafana('active_users', this.activeUsers.size, 'gauge');
 
         this.sendMetricToGrafana('pizza_sold', this.pizzaMetrics.sold, 'counter');
         this.sendMetricToGrafana('pizza_failures', this.pizzaMetrics.failures, 'counter');
