@@ -16,7 +16,9 @@ class MetricsCollector {
       failure: 0,
     };
 
-    this.activeUsers = new Set();
+    // Track users with their last activity timestamp
+    this.activeUsers = new Map(); // userId -> timestamp
+    this.ACTIVE_USER_WINDOW = 10 * 60 * 1000; // 10 minutes in milliseconds
 
     this.pizzaMetrics = {
       sold: 0,
@@ -48,7 +50,7 @@ class MetricsCollector {
 
     // Track active users (if authenticated)
     if (req.user?.id) {
-      this.activeUsers.add(req.user.id);
+      this.activeUsers.set(req.user.id, Date.now());
     }
 
     // Track authentication attempts (login endpoint is PUT /api/auth)
@@ -86,6 +88,21 @@ class MetricsCollector {
     this.latencyMetrics.pizzaCreationCount++;
   }
 
+  // Get count of active users (within time window)
+  getActiveUserCount() {
+    const now = Date.now();
+    const cutoffTime = now - this.ACTIVE_USER_WINDOW;
+
+    // Remove stale users
+    for (const [userId, timestamp] of this.activeUsers.entries()) {
+      if (timestamp < cutoffTime) {
+        this.activeUsers.delete(userId);
+      }
+    }
+
+    return this.activeUsers.size;
+  }
+
   // Get system metrics
   getCpuUsagePercentage() {
     const cpuUsage = os.loadavg()[0] / os.cpus().length;
@@ -113,7 +130,7 @@ class MetricsCollector {
         this.sendMetricToGrafana('auth_success', this.authMetrics.success, 'counter');
         this.sendMetricToGrafana('auth_failure', this.authMetrics.failure, 'counter');
 
-        this.sendMetricToGrafana('active_users', this.activeUsers.size, 'gauge');
+        this.sendMetricToGrafana('active_users', this.getActiveUserCount(), 'gauge');
 
         this.sendMetricToGrafana('pizza_sold', this.pizzaMetrics.sold, 'counter');
         this.sendMetricToGrafana('pizza_failures', this.pizzaMetrics.failures, 'counter');
