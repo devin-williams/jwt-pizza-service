@@ -51,8 +51,9 @@ class MetricsCollector {
       this.activeUsers.add(req.user.id);
     }
 
-    // Track authentication attempts
-    if (req.path === '/api/auth' && req.method === 'PUT') {
+    // Track authentication attempts (login endpoint is PUT /api/auth)
+    const isLoginAttempt = req.method === 'PUT' && req.originalUrl === '/api/auth';
+    if (isLoginAttempt) {
       res.on('finish', () => {
         if (res.statusCode === 200) {
           this.authMetrics.success++;
