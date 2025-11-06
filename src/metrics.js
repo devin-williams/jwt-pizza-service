@@ -75,6 +75,13 @@ class MetricsCollector {
     next();
   };
 
+  // Track user logout
+  userLogout(userId) {
+    if (userId) {
+      this.activeUsers.delete(userId);
+    }
+  }
+
   // Track pizza purchases
   pizzaPurchase(success, latency, price) {
     if (success) {
