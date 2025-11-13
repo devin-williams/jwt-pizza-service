@@ -118,6 +118,11 @@ class Logger {
 
   // Send log to Grafana Loki
   sendLogToGrafana(logEntry) {
+    // Skip logging if config is not available (e.g., during tests)
+    if (!config.logging || !config.logging.url) {
+      return;
+    }
+
     // Format for Loki
     const streams = [
       {
