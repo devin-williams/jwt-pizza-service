@@ -97,6 +97,7 @@ class Logger {
         if (
           lowerKey.includes("password") ||
           lowerKey.includes("token") ||
+          lowerKey.includes("jwt") ||
           lowerKey.includes("secret") ||
           lowerKey.includes("apikey") ||
           lowerKey.includes("authorization")
