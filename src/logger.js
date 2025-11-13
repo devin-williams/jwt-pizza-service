@@ -19,6 +19,17 @@ class Logger {
     res.on("finish", () => {
       const latency = Date.now() - startTime;
 
+      // Parse responseBody if it's a string
+      let parsedResponseBody = responseBody;
+      if (typeof responseBody === "string") {
+        try {
+          parsedResponseBody = JSON.parse(responseBody);
+        } catch (e) {
+          // If it's not valid JSON, keep it as a string
+          parsedResponseBody = responseBody;
+        }
+      }
+
       this.log("info", "HTTP request", {
         type: "general",
         method: req.method,
@@ -26,7 +37,7 @@ class Logger {
         statusCode: res.statusCode,
         hasAuth: !!req.headers.authorization,
         requestBody: JSON.stringify(this.sanitize(req.body)),
-        responseBody: JSON.stringify(this.sanitize(responseBody)),
+        responseBody: JSON.stringify(this.sanitize(parsedResponseBody)),
         latency,
       });
     });
