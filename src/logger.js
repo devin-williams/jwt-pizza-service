@@ -1,4 +1,4 @@
-const config = require('./config');
+const config = require("./config");
 
 class Logger {
   // HTTP request/response logging middleware
@@ -16,10 +16,11 @@ class Logger {
     };
 
     // Log when response finishes
-    res.on('finish', () => {
+    res.on("finish", () => {
       const latency = Date.now() - startTime;
 
-      this.log('http', {
+      this.log("info", "HTTP request", {
+        type: "http",
         method: req.method,
         path: req.originalUrl || req.url,
         statusCode: res.statusCode,
@@ -37,7 +38,7 @@ class Logger {
   log(level, message, details = {}) {
     const logEntry = {
       level,
-      message: typeof message === 'string' ? message : JSON.stringify(message),
+      message: typeof message === "string" ? message : JSON.stringify(message),
       timestamp: Date.now(),
       ...details,
     };
@@ -47,8 +48,8 @@ class Logger {
 
   // Log database queries
   logDatabase(query, params) {
-    this.log('info', 'Database query', {
-      type: 'database',
+    this.log("info", "Database query", {
+      type: "database",
       query: this.sanitize(query),
       params: this.sanitize(params),
     });
@@ -56,8 +57,8 @@ class Logger {
 
   // Log factory service requests
   logFactory(operation, requestBody, responseBody, statusCode) {
-    this.log('info', 'Factory service call', {
-      type: 'factory',
+    this.log("info", "Factory service call", {
+      type: "factory",
       operation,
       requestBody: JSON.stringify(this.sanitize(requestBody)),
       responseBody: JSON.stringify(this.sanitize(responseBody)),
@@ -67,8 +68,8 @@ class Logger {
 
   // Log unhandled exceptions
   logException(error, context = {}) {
-    this.log('error', 'Unhandled exception', {
-      type: 'exception',
+    this.log("error", "Unhandled exception", {
+      type: "exception",
       error: error.message,
       stack: error.stack,
       ...this.sanitize(context),
@@ -80,7 +81,7 @@ class Logger {
     if (!data) return data;
 
     // Handle different data types
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       return this.sanitizeString(data);
     }
 
@@ -88,19 +89,19 @@ class Logger {
       return data.map((item) => this.sanitize(item));
     }
 
-    if (typeof data === 'object') {
+    if (typeof data === "object") {
       const sanitized = {};
       for (const [key, value] of Object.entries(data)) {
         // Remove sensitive fields
         const lowerKey = key.toLowerCase();
         if (
-          lowerKey.includes('password') ||
-          lowerKey.includes('token') ||
-          lowerKey.includes('secret') ||
-          lowerKey.includes('apikey') ||
-          lowerKey.includes('authorization')
+          lowerKey.includes("password") ||
+          lowerKey.includes("token") ||
+          lowerKey.includes("secret") ||
+          lowerKey.includes("apikey") ||
+          lowerKey.includes("authorization")
         ) {
-          sanitized[key] = '***REDACTED***';
+          sanitized[key] = "***REDACTED***";
         } else {
           sanitized[key] = this.sanitize(value);
         }
@@ -113,7 +114,10 @@ class Logger {
 
   sanitizeString(str) {
     // Redact JWT tokens in strings
-    return str.replace(/Bearer\s+[\w-]+\.[\w-]+\.[\w-]+/gi, 'Bearer ***REDACTED***');
+    return str.replace(
+      /Bearer\s+[\w-]+\.[\w-]+\.[\w-]+/gi,
+      "Bearer ***REDACTED***"
+    );
   }
 
   // Send log to Grafana Loki
@@ -128,8 +132,8 @@ class Logger {
       {
         stream: {
           app: config.logging.source,
-          level: logEntry.level || 'info',
-          type: logEntry.type || 'general',
+          level: logEntry.level || "info",
+          type: logEntry.type || "general",
         },
         values: [
           [
@@ -146,20 +150,20 @@ class Logger {
     const body = JSON.stringify({ streams });
 
     fetch(config.logging.url, {
-      method: 'POST',
+      method: "POST",
       body: body,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${config.logging.userId}:${config.logging.apiKey}`,
       },
     })
       .then((res) => {
         if (!res.ok) {
-          console.error('Failed to send log to Grafana:', res.statusText);
+          console.error("Failed to send log to Grafana:", res.statusText);
         }
       })
       .catch((error) => {
-        console.error('Error sending log to Grafana:', error);
+        console.error("Error sending log to Grafana:", error);
       });
   }
 }
