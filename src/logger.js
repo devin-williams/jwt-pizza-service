@@ -24,8 +24,8 @@ class Logger {
         path: req.originalUrl || req.url,
         statusCode: res.statusCode,
         hasAuth: !!req.headers.authorization,
-        requestBody: this.sanitize(req.body),
-        responseBody: this.sanitize(responseBody),
+        requestBody: JSON.stringify(this.sanitize(req.body)),
+        responseBody: JSON.stringify(this.sanitize(responseBody)),
         latency,
       });
     });
@@ -59,8 +59,8 @@ class Logger {
     this.log('info', 'Factory service call', {
       type: 'factory',
       operation,
-      requestBody: this.sanitize(requestBody),
-      responseBody: this.sanitize(responseBody),
+      requestBody: JSON.stringify(this.sanitize(requestBody)),
+      responseBody: JSON.stringify(this.sanitize(responseBody)),
       statusCode,
     });
   }
