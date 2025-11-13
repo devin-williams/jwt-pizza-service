@@ -20,7 +20,7 @@ class Logger {
       const latency = Date.now() - startTime;
 
       this.log("info", "HTTP request", {
-        type: "http",
+        type: "general",
         method: req.method,
         path: req.originalUrl || req.url,
         statusCode: res.statusCode,
