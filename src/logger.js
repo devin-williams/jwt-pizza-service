@@ -24,7 +24,7 @@ class Logger {
       if (typeof responseBody === "string") {
         try {
           parsedResponseBody = JSON.parse(responseBody);
-        } catch (e) {
+        } catch {
           // If it's not valid JSON, keep it as a string
           parsedResponseBody = responseBody;
         }
