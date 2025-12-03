@@ -8,6 +8,8 @@ const logger = require('../logger.js');
 
 const orderRouter = express.Router();
 
+let enableChaos = false;
+
 orderRouter.docs = [
   {
     method: 'GET',
@@ -65,6 +67,19 @@ orderRouter.put(
   })
 );
 
+// Chaos endpoint
+orderRouter.put(
+  '/chaos/:state',
+  authRouter.authenticateToken,
+  asyncHandler(async (req, res) => {
+    if (req.user.isRole(Role.Admin)) {
+      enableChaos = req.params.state === 'true';
+    }
+
+    res.json({ chaos: enableChaos });
+  })
+);
+
 // getOrders
 orderRouter.get(
   '/',
@@ -78,6 +93,12 @@ orderRouter.get(
 orderRouter.post(
   '/',
   authRouter.authenticateToken,
+  (req, res, next) => {
+    if (enableChaos && Math.random() < 0.5) {
+      throw new StatusCodeError('Chaos monkey', 500);
+    }
+    next();
+  },
   asyncHandler(async (req, res) => {
     const orderReq = req.body;
     const order = await DB.addDinerOrder(req.user, orderReq);
